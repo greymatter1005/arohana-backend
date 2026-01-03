@@ -3,28 +3,27 @@
  * 
  * This module handles PostgreSQL database connection using Sequelize ORM.
  * It exports a configured Sequelize instance and connection test function.
+ * Supports both DATABASE_URL (Render) and individual env variables
  */
-
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
 /**
  * Create Sequelize instance with database credentials from environment variables
+ * Supports both DATABASE_URL (production) and individual env vars (development)
  */
-const sequelize = new Sequelize(
-  process.env.DB_NAME || 'arohana_db',
-  process.env.DB_USER || 'postgres',
-  process.env.DB_PASSWORD || '',
-  {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
+let sequelize;
+
+if (process.env.DATABASE_URL) {
+  // Use DATABASE_URL if available (Render, Railway, etc)
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: {
-      max: 10, // Maximum number of connections in pool
-      min: 0,  // Minimum number of connections in pool
-      acquire: 30000, // Maximum time (ms) to wait for a connection
-      idle: 10000 // Maximum time (ms) a connection can be idle
+      max: 10,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
     },
     dialectOptions: {
       ssl: process.env.NODE_ENV === 'production' ? {
@@ -32,8 +31,33 @@ const sequelize = new Sequelize(
         rejectUnauthorized: false
       } : false
     }
-  }
-);
+  });
+} else {
+  // Fallback to individual environment variables
+  sequelize = new Sequelize(
+    process.env.DB_NAME || 'arohana_db',
+    process.env.DB_USER || 'postgres',
+    process.env.DB_PASSWORD || '',
+    {
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 5432,
+      dialect: 'postgres',
+      logging: process.env.NODE_ENV === 'development' ? console.log : false,
+      pool: {
+        max: 10,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      },
+      dialectOptions: {
+        ssl: process.env.NODE_ENV === 'production' ? {
+          require: true,
+          rejectUnauthorized: false
+        } : false
+      }
+    }
+  );
+}
 
 /**
  * Test database connection
@@ -70,4 +94,3 @@ module.exports = {
   testConnection,
   syncDatabase
 };
-
