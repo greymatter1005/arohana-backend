@@ -26,7 +26,8 @@ if (process.env.DATABASE_URL) {
       idle: 10000
     },
     dialectOptions: {
-ssl: { require: true, rejectUnauthorized: false }
+ssl: { require: true, rejectUnauthorized: false}
+    }
   });
 } else {
   // Fallback to individual environment variables
